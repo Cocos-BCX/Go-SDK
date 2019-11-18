@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	. "Go-SDK/type"
+	. "CocosSDK/type"
 	"encoding/json"
 )
 
@@ -120,7 +120,7 @@ type TokenInfo struct {
 		MaxSupply         interface{} `json:"max_supply"`
 		MarketFeePercent  interface{} `json:"market_fee_percent"`
 		MaxMarketFee      interface{} `json:"max_market_fee"`
-		IssuerPermissions interface{} `json:"issuer_permissions"`
+		IssuerPermissions BigInt      `json:"issuer_permissions"`
 		Flags             int         `json:"flags"`
 		CoreExchangeRate  struct {
 			Base struct {

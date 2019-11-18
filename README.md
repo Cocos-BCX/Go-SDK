@@ -3,7 +3,7 @@
 ## 安装
 
 ```
-git clone https://github.com/Ximenyan/cocos-go-sdk.git
+git clone https://github.com/Cocos-BCX/Go-SDK.git
 ```
 或者 
 ```
@@ -12,14 +12,14 @@ export GOPROXY=https://goproxy.cn
 go.mod 增加
 
 ```
-replace Go-SDK => github.com/Cocos-BCX/Go-SDK
+replace CocosSDK => github.com/Cocos-BCX/Go-SDK
 ```
 
 ## 使用
 
 ```
 import (
-	sdk "Go-SDK"
+	sdk "CocosSDK"
 	"fmt"
 )
 

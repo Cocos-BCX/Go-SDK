@@ -1,9 +1,9 @@
 package wallet
 
 import (
-	"Go-SDK/common"
-	"Go-SDK/rpc"
-	. "Go-SDK/type"
+	"CocosSDK/common"
+	"CocosSDK/rpc"
+	. "CocosSDK/type"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -131,13 +131,13 @@ func (w *Wallet) DeleteAccountByName(name ...string) (err error) {
 }
 
 //创建账户
-func (w *Wallet) CreateAccount(name string, password string) (err error) {
+func (w *Wallet) CreateAccount(name string, password string) (tx_hash string, err error) {
 	w.Lock()
 	defer w.Unlock()
 	if w.Default.Info == nil {
 		w.Default.Info = rpc.GetAccountInfoByName(w.Default.Name)
 	}
-	w.Accounts[name], err = w.registerAccount(w.Default.GetActiveKey(), name, password, w.Default.Info.ID)
+	w.Accounts[name], tx_hash, err = w.registerAccount(w.Default.GetActiveKey(), name, password, w.Default.Info.ID)
 	w.save()
 	return
 }
@@ -208,26 +208,27 @@ func (w *Wallet) IsEmpty() bool {
 }
 
 //Transfer
-func (w *Wallet) Transfer(to, symbol, memo string, value float64) error {
-	t := CreateTransaction(w.Default.GetActiveKey(), w.Default.Name, to, symbol, value, memo)
+func (w *Wallet) Transfer(to, symbol string, value float64, memo ...string) (string, error) {
+	var memo_str string
+	if len(memo) > 0 {
+		memo_str = memo[0]
+	}
+	t := CreateTransaction(w.Default.GetActiveKey(), w.Default.Name, to, symbol, value, memo_str)
 	return w.SignAndSendTX(OP_TRANSFER, t)
 }
 
 //upgrade_account
-func (w *Wallet) UpgradeAccount(name string) error {
+func (w *Wallet) UpgradeAccount(name string) (string, error) {
 	info := rpc.GetAccountInfoByName(name)
 	t := CreateUpgradeAccount(name, info.ID)
 	return w.SignAndSendTX(OP_UPGRADE_ACCOUNT, t)
 }
 
-func (w *Wallet) RegisterNhAssetCreator(name string) error {
+func (w *Wallet) RegisterNhAssetCreator(name string) (string, error) {
 	info := rpc.GetAccountInfoByName(name)
 	t := &NhAssetCreator{
-		Fee:              EmptyFee(),
 		FeePayingAccount: ObjectId(info.ID),
 	}
-	//rpc.GetRequireFeeData(46, t)
-	//st := CreateSignTransaction(46, w.Default.GetActiveKey(), t)
 	return w.SignAndSendTX(OP_NH_CREATOR, t) //rpc.BroadcastTransaction(st)
 }
 
@@ -240,8 +241,6 @@ func (w *Wallet) SetDefaultAccount(name, password string) error {
 			wif, _ := DecryptKey(w.Accounts[name].KeyPairs[i].EncryptWif, []byte(password))
 			w.Accounts[name].KeyPairs[i].Private_Key = PrkFromWifString(wif)
 			if w.Accounts[name].KeyPairs[i].PubKey != w.Accounts[name].KeyPairs[i].Private_Key.GetPublicKey().ToBase58String() {
-				log.Println(w.Accounts[name].KeyPairs[i].PubKey)
-				log.Println(w.Accounts[name].KeyPairs[i].Private_Key.GetPublicKey().ToBase58String())
 				return errors.New("password error!")
 			}
 		}
@@ -250,21 +249,24 @@ func (w *Wallet) SetDefaultAccount(name, password string) error {
 	}
 	return errors.New("no account name:" + name)
 }
-func (w *Wallet) SignAndSendTX(opID int, t OpData) error {
-	rpc.GetRequireFeeData(opID, t)
-	if st, err := CreateSignTransaction(opID, w.Default.GetActiveKey(), t); err != nil {
-		return err
+func (w *Wallet) SignAndSendTX(opID int, t Object, prk ...*PrivateKey) (tx_hash string, err error) {
+	if len(prk) <= 0 {
+		prk = []*PrivateKey{w.Default.GetActiveKey()}
+	}
+	if st, err := CreateSignTransaction(opID, t, prk...); err != nil {
+		return tx_hash, err
 	} else {
 		return rpc.BroadcastTransaction(st)
 	}
 }
-func (w *Wallet) CreateKey() PrivateKey {
+func CreateKey() PrivateKey {
 	return CreatePrivateKey()
 }
 
 /*注册賬戶*/
-func (w *Wallet) registerAccount(prk *PrivateKey, name string, password string, registrar string) (*Account, error) {
+func (w *Wallet) registerAccount(prk *PrivateKey, name string, password string, registrar string) (*Account, string, error) {
 	acct := CreateAccount(name, password)
 	c := CreateRegisterData(acct.GetActiveKey().GetPublicKey().ToBase58String(), acct.GetOwnerKey().GetPublicKey().ToBase58String(), name, registrar, registrar)
-	return acct, w.SignAndSendTX(OP_CREATE_ACCOUNT, c)
+	tx_hash, err := w.SignAndSendTX(OP_CREATE_ACCOUNT, c)
+	return acct, tx_hash, err
 }

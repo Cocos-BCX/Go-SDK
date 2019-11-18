@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	. "Go-SDK/type"
+	. "CocosSDK/type"
 	"encoding/json"
 	"log"
 )
@@ -100,6 +100,19 @@ func GetAccountsInfo(objIds []string) *AccountsInfo {
 	return nil
 }
 
+func GetAccountInfo(objId string) *AccountInfo {
+	accounts := &AccountsInfo{}
+	params := []interface{}{objId}
+	req := CreateRpcRequest(CALL,
+		[]interface{}{0, `get_objects`,
+			[]interface{}{params}})
+	if resp, err := Client.Send(req); err == nil {
+		if err = resp.GetInterface(accounts); err == nil {
+			return (*accounts)[0]
+		}
+	}
+	return nil
+}
 func GetAccountInfoByPublicKey(publicKey string) *AccountInfo {
 	ids := GetIdsByPubkeys([]string{publicKey})[0]
 	accsInfo := GetAccountsInfo(ids)
@@ -191,18 +204,16 @@ func BroadcastTransactionWithHandler(tx interface{}, handler ...func(r *RpcResp)
 	return Client.SendWithHandler(req, handler[0])
 }
 
-func BroadcastTransaction(tx interface{}) error {
+func BroadcastTransaction(tx interface{}) (tx_hash string, err error) {
 	req := CreateRpcRequest(CALL,
 		[]interface{}{BROADCAST_API_ID, `broadcast_transaction`,
 			[]interface{}{tx}})
 	if resp, err := Client.Send(req); err == nil {
-		txId := ""
-		if err = resp.GetInterface(&txId); err == nil {
-			log.Println("BroadcastTransaction TXID::", txId)
-			return nil
+		if err = resp.GetInterface(&tx_hash); err == nil {
+			return tx_hash, err
 		}
-		return err
+		return tx_hash, err
 	} else {
-		return err
+		return tx_hash, err
 	}
 }

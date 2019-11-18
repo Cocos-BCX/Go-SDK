@@ -1,19 +1,18 @@
 package CocosSDK
 
 import (
-	"Go-SDK/rpc"
-	. "Go-SDK/type"
+	"CocosSDK/rpc"
+	. "CocosSDK/type"
 	"io/ioutil"
 )
 
 /*更新合约*/
-func ReviseContract(c_name, data string) error {
+func ReviseContract(c_name, data string) (string, error) {
 	if Wallet.Default.Info == nil {
 		Wallet.Default.Info = rpc.GetAccountInfoByName(Wallet.Default.Name)
 	}
 	contract_info := rpc.GetContract(c_name)
 	contract := &UpdateContractData{
-		Fee:        EmptyFee(),
 		ContractID: ObjectId(contract_info.ID),
 		Extensions: []interface{}{},
 		Data:       String(data),
@@ -23,11 +22,11 @@ func ReviseContract(c_name, data string) error {
 }
 
 /*更新合约*/
-func ReviseContractByFile(c_name, path string) error {
+func ReviseContractByFile(c_name, path string) (tx_hash string, err error) {
 	byte_s, err := ioutil.ReadFile(path)
 
 	if err != nil {
-		return err
+		return tx_hash, err
 	}
 	data := string(byte_s)
 	return ReviseContract(c_name, data)
@@ -35,12 +34,11 @@ func ReviseContractByFile(c_name, path string) error {
 
 /*创建合约*/
 /*c_auth:公钥*/
-func CreateContract(c_name, c_auth, data string) error {
+func CreateContract(c_name, c_auth, data string) (string, error) {
 	if Wallet.Default.Info == nil {
 		Wallet.Default.Info = rpc.GetAccountInfoByName(Wallet.Default.Name)
 	}
 	contract := &CreateContractData{
-		Fee:               EmptyFee(),
 		ContractAuthority: c_auth,
 		Extensions:        []interface{}{},
 		Data:              String(data),
@@ -51,24 +49,23 @@ func CreateContract(c_name, c_auth, data string) error {
 }
 
 /*创建合约*/
-func CreateContractByFile(c_name, c_auth, path string) error {
+func CreateContractByFile(c_name, c_auth, path string) (tx_hash string, err error) {
 	byte_s, err := ioutil.ReadFile(path)
 	if err != nil {
-		return err
+		return tx_hash, err
 	}
 	data := string(byte_s)
 	return CreateContract(c_name, c_auth, data)
 }
 
 /*调用合约*/
-func InvokeContract(contract_name, func_name string, args ...interface{}) error {
+func InvokeContract(contract_name, func_name string, args ...interface{}) (string, error) {
 	contract_info := GetContract(contract_name)
 	value_list := CreateValueList(args)
 	if Wallet.Default.Info == nil {
 		Wallet.Default.Info = rpc.GetAccountInfoByName(Wallet.Default.Name)
 	}
 	call_data := &CallData{
-		Fee:          EmptyFee(),
 		ValueList:    value_list,
 		Extensions:   []interface{}{},
 		Caller:       ObjectId(Wallet.Default.Info.ID),
