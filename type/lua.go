@@ -2,7 +2,7 @@ package types
 
 import (
 	"CocosSDK/common"
-    "encoding/json"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"

@@ -24,6 +24,7 @@ func CreateTransaction(prk *PrivateKey, from_name, to_name, tk_symbol string, va
 	to_puk := to_info.GetActivePuKey()
 	from_info := rpc.GetAccountInfoByName(from_name)
 	from_puk := from_info.GetActivePuKey()
+
 	var memoData *OpMemo
 	if encode {
 		m_data := EncodeMemo(prk, from_puk, to_puk, memo)

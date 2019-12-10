@@ -1,8 +1,8 @@
 package chain // import "CocosSDK/chain"
 
 import (
-	"log"
 	"CocosSDK/rpc"
+	"log"
 )
 
 type ChainProperties struct {

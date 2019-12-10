@@ -95,6 +95,7 @@ func (o Memo) GetBytes() []byte {
 	nonce := common.VarUint(o.Nonce, 64)
 	msg, _ := hex.DecodeString(o.Message)
 	msg = append(common.Varint(uint64(len(msg))), msg...)
+
 	byte_s := append(append(from,
 		append(to,
 			append(nonce, msg...)...)...))

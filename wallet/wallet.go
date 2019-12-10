@@ -222,6 +222,7 @@ func (w *Wallet) Transfer(to, symbol string, value float64, memo ...string) (str
 	if len(memo) > 0 {
 		memo_str = memo[0]
 	}
+
 	t := CreateTransaction(w.Default.GetActiveKey(), w.Default.Name, to, symbol, value, memo_str, false)
 	return w.SignAndSendTX(OP_TRANSFER, t)
 }
