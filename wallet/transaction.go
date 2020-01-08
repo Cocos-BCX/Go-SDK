@@ -2,21 +2,21 @@ package wallet
 
 import (
 	"CocosSDK/chain"
+	"CocosSDK/common"
+	"CocosSDK/crypto/secp256k1"
+	"CocosSDK/rpc"
+	. "CocosSDK/type"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math"
 	"math/rand"
 	"strconv"
 	"time"
-
-	"CocosSDK/common"
-	"CocosSDK/crypto/secp256k1"
-	"CocosSDK/rpc"
-	. "CocosSDK/type"
 )
 
 func CreateTransaction(prk *PrivateKey, from_name, to_name, tk_symbol string, value float64, memo string, encode bool) *Transaction {
@@ -47,7 +47,12 @@ func CreateTransaction(prk *PrivateKey, from_name, to_name, tk_symbol string, va
 	}
 	return t
 }
-
+func PKCS7UnPadding(origData []byte) []byte {
+	length := len(origData)
+	unpadding := int(origData[length-1])
+	//fmt.Println(length,unpadding)
+	return origData[:(length - unpadding)]
+}
 func DecodeMemo(prk *PrivateKey, from, msg string, nonce uint64) (decode_msg string, err error) {
 	msg_byte_s, err := hex.DecodeString(msg)
 	puk := PukFromBase58String(from)
@@ -73,8 +78,9 @@ func DecodeMemo(prk *PrivateKey, from, msg string, nonce uint64) (decode_msg str
 	}
 	block, _ := aes.NewCipher(seed_digest[0:32])
 	bm := cipher.NewCBCDecrypter(block, seed_digest[32:48])
-	bm.CryptBlocks(msg_byte_s, msg_byte_s)
-	decode_msg = string(msg_byte_s[4:])
+	byte_s_s := make([]byte,len(msg_byte_s))
+	bm.CryptBlocks(byte_s_s, msg_byte_s)
+	decode_msg = string(PKCS7UnPadding(byte_s_s[4:]))
 	return
 }
 
@@ -116,7 +122,7 @@ func EncodeMemo(prk *PrivateKey, from, to, msg string) *Memo {
 type Signed_Transaction struct {
 	RefBlockNum    uint64      `json:"ref_block_num"`
 	RefBlockPrefix uint64      `json:"ref_block_prefix"`
-	Expiration     string      `json:"expiration"`
+	Expiration     Expiration   `json:"expiration"`
 	Operations     []Operation `json:"operations"`
 	ExtensionsData Extensions  `json:"extensions"`
 	Signatures     []string    `json:"signatures"`
@@ -125,8 +131,7 @@ type Signed_Transaction struct {
 func (o Signed_Transaction) GetBytes() []byte {
 	block_num_data := common.VarUint(o.RefBlockNum, 16)
 	block_prefix_data := common.VarUint(o.RefBlockPrefix, 32)
-	t, _ := time.Parse(TIME_FORMAT, o.Expiration)
-	expiration_data := common.VarUint(uint64(t.Unix()), 32)
+	expiration_data := o.Expiration.GetBytes()
 	operations_data := common.Varint(uint64(len(o.Operations)))
 	for _, op := range o.Operations {
 		operations_data = append(operations_data, op.GetBytes()...)
@@ -148,7 +153,7 @@ func CreateSignTransaction(opID int, t Object, prk ...*PrivateKey) (st *Signed_T
 	st = &Signed_Transaction{
 		RefBlockNum:    dgp.Get_ref_block_num(),
 		RefBlockPrefix: dgp.Get_ref_block_prefix(),
-		Expiration:     time.Now().Format(TIME_FORMAT),
+		Expiration:   GetExpiration(),
 		Operations:     []Operation{op},
 		ExtensionsData: []interface{}{},
 		Signatures:     []string{},
