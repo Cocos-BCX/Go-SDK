@@ -21,6 +21,11 @@ func GetBlockHeader(block_hight int) *rpc.BlockHeader {
 	return rpc.GetBlockHeader(block_hight)
 }
 
+/*查询ChainInfo*/
+func GetChainInfo() *rpc.ChainInfo {
+	return rpc.GetDynamicGlobalProperties()
+}
+
 /*查询交易*/
 func GetTransactionById(txId string) *rpc.TransactinInfo {
 	return rpc.GetTransactionById(txId)
