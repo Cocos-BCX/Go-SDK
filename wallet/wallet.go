@@ -280,7 +280,7 @@ func (w *Wallet) SignAndSendTX(opID int, t Object, prk ...*PrivateKey) (tx_hash 
 		return rpc.BroadcastTransaction(st)
 	}
 }
-func CreateKey() PrivateKey {
+func (w *Wallet) CreateKey() PrivateKey {
 	return CreatePrivateKey()
 }
 
