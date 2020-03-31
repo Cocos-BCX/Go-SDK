@@ -207,6 +207,8 @@ type DynamicGlobalProperties struct {
 	LastIrreversibleBlockNum       int    `json:"last_irreversible_block_num"`
 }
 
+type ChainInfo = DynamicGlobalProperties
+
 func GetDynamicGlobalProperties() *DynamicGlobalProperties {
 	dgp := &DynamicGlobalProperties{}
 	req := CreateRpcRequest(CALL,
